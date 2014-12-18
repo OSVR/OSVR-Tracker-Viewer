@@ -8,5 +8,14 @@ find_package(OpenSceneGraph COMPONENTS OpenThreads osgDB osgViewer osgGA osgUtil
 
 include_directories(${Boost_INCLUDE_DIR} ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
-add_executable(OSVRTrackerView OSVRTrackerView.cpp)
+add_executable(OSVRTrackerView
+    OSGMathInterop.h
+    OSGMathInterop.h
+    OSVRContext.cpp
+    OSVRContext.h
+    OSVRInterfaceData.cpp
+    OSVRInterfaceData.h
+    OSVRUpdateCallback.cpp
+    OSVRUpdateCallback.h
+    OSVRTrackerView.cpp)
 target_link_libraries(OSVRTrackerView osvr::osvrClientKitCpp ${OPENSCENEGRAPH_LIBRARIES})
