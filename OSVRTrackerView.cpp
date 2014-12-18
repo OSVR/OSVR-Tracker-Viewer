@@ -56,6 +56,16 @@ void poseCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
     // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
 }
 
+void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
+                         const OSVR_OrientationReport *report) {
+    CallbackHelper cb(userdata);
+    osg::Matrix mat = cb.xform->getMatrix();
+    mat.setRotate(toQuat(report->rotation));
+    cb.xform->setMatrix(mat);
+
+    // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
+}
+
 class TrackerViewApp {
   public:
     static double worldAxesScale() { return 0.2; }
@@ -101,6 +111,16 @@ class TrackerViewApp {
 
     void addPoseTracker(std::string const &path) {
         m_addTracker(&poseCallback, path);
+    }
+
+    void addOrientationTracker(std::string const &path) {
+        osg::ref_ptr<osg::MatrixTransform> node =
+            m_addTracker(&orientationCallback, path);
+
+        /// Offset orientation-only trackers up by 1 unit (meter)
+        osg::Matrix mat;
+        mat.setTrans(0, 1, 0);
+        node->setMatrix(mat);
     }
 
   private:
@@ -153,6 +173,8 @@ int main(int argc, char **argv) {
 
     TrackerViewApp app;
     app.addPoseTracker("/me/hands/left");
+    app.addPoseTracker("/me/hands/right");
+    app.addOrientationTracker("/me/head");
 
     args.reportRemainingOptionsAsUnrecognized();
 
