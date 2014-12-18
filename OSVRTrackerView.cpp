@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
 
     /// Init the OSG viewer
     osgViewer::Viewer viewer(args);
+    viewer.setUpViewInWindow(20, 20, 640, 480);
 
     osg::ApplicationUsage::Type helpType;
     if ((helpType = args.readHelpType()) != osg::ApplicationUsage::NO_HELP) {
