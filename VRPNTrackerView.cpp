@@ -16,13 +16,13 @@
 // the Apache License, Version 2.0)
 
 // Internal Includes
-#include "OSVRUpdateCallback.h"
-#include "OSGMathInterop.h"
-#include "OSVRInterfaceData.h"
-#include "OSVRContext.h"
+#include "VRPNUpdateCallback.h"
+#include "OSGQuatlib.h"
+#include "VRPNNodeData.h"
+#include "VRPNMainloop.h"
 
 // Library/third-party includes
-#include <osvr/ClientKit/ClientKit.h>
+#include <vrpn_Tracker.h>
 
 #include <osg/ref_ptr>
 #include <osg/PositionAttitudeTransform>
@@ -43,27 +43,31 @@
 struct CallbackHelper {
     CallbackHelper(void *userdata)
         : xform(static_cast<osg::MatrixTransform *>(userdata)),
-          iface(dynamic_cast<OSVRInterfaceData *>(xform->getUserData())) {}
+          data(dynamic_cast<VRPNNodeData *>(xform->getUserData())) {}
     osg::MatrixTransform *xform;
-    OSVRInterfaceData *iface;
+    VRPNNodeData *data;
 };
 
-void poseCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
-                  const OSVR_PoseReport *report) {
+inline osg::Matrix toMatrix(vrpn_TRACKERCB const &t) {
+    osg::Matrix ret;
+    ret.setRotate(toQuat(t.quat));
+    ret.setTrans(toVec3(t.pos));
+    return ret;
+}
+void VRPN_CALLBACK poseCallback(void *userdata, const vrpn_TRACKERCB t) {
     CallbackHelper cb(userdata);
-    cb.xform->setMatrix(toMatrix(report->pose));
-
-    // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
+    if (cb.data->getSensor() == t.sensor) {
+        cb.xform->setMatrix(toMatrix(t));
+    }
 }
 
-void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
-                         const OSVR_OrientationReport *report) {
+void VRPN_CALLBACK orientationCallback(void *userdata, const vrpn_TRACKERCB t) {
     CallbackHelper cb(userdata);
-    osg::Matrix mat = cb.xform->getMatrix();
-    mat.setRotate(toQuat(report->rotation));
-    cb.xform->setMatrix(mat);
-
-    // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
+    if (cb.data->getSensor() == t.sensor) {
+        osg::Matrix mat = cb.xform->getMatrix();
+        mat.setRotate(toQuat(t.quat));
+        cb.xform->setMatrix(mat);
+    }
 }
 
 class TrackerViewApp {
@@ -72,21 +76,13 @@ class TrackerViewApp {
     static double trackerAxesScale() { return 0.1; }
 
     TrackerViewApp()
-        : m_ctx(new OSVRContext(
-              "org.opengoggles.osvrtrackerview")) /// Set up OSVR: making an OSG
-                                                  /// ref-counted object hold
-                                                  /// the context.
-          ,
+        : m_mainloop(new VRPNMainloop),
           m_scene(new osg::PositionAttitudeTransform),
           m_smallAxes(new osg::MatrixTransform) {
 
-        /// Transform into default OSVR coordinate system: z near.
-        m_scene->setAttitude(osg::Quat(90, osg::Vec3(1, 0, 0)));
-
-        /// Set the root node's update callback to run the OSVR update,
-        /// and give it the context ref
-        m_scene->setUpdateCallback(new OSVRUpdateCallback);
-        m_scene->setUserData(m_ctx.get());
+        /// Set the root node's update callback to run the VRPN mainloop
+        m_scene->setUpdateCallback(new VRPNUpdateCallback);
+        m_scene->setUserData(m_mainloop.get());
 
         /// Load the basic model for axes
         osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile("RPAxes.osg");
@@ -109,40 +105,42 @@ class TrackerViewApp {
 
     osg::ref_ptr<osg::PositionAttitudeTransform> getScene() { return m_scene; }
 
-    void addPoseTracker(std::string const &path) {
-        m_addTracker(&poseCallback, path);
+    void addPoseTracker(std::string const &device, int sensor) {
+        m_addTracker(&poseCallback, device, sensor);
     }
 
-    void addOrientationTracker(std::string const &path) {
+    void addOrientationTracker(std::string const &device, int sensor) {
         osg::ref_ptr<osg::MatrixTransform> node =
-            m_addTracker(&orientationCallback, path);
+            m_addTracker(&orientationCallback, device, sensor);
 
         /// Offset orientation-only trackers up by 1 unit (meter)
         osg::Matrix mat;
-        mat.setTrans(0, 1, 0);
+        mat.setTrans(0, 0, 1);
         node->setMatrix(mat);
     }
 
   private:
     template <typename CallbackType>
-    osg::ref_ptr<osg::MatrixTransform> m_addTracker(CallbackType cb,
-                                                    std::string const &path) {
+    osg::ref_ptr<osg::MatrixTransform>
+    m_addTracker(CallbackType cb, std::string const &device, int sensor) {
         /// Make scenegraph portion
         osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform;
         node->addChild(m_smallAxes);
         m_scene->addChild(node);
 
-        /// Get OSVR interface and set callback
-        osg::ref_ptr<OSVRInterfaceData> data = m_ctx->getInterface(path);
-        data->getInterface().registerCallback(cb,
-                                              static_cast<void *>(node.get()));
-
-        /// Transfer ownership of the interface holder to the node
+        /// Create data.
+        osg::ref_ptr<VRPNNodeData> data = new VRPNNodeData(device, sensor);
         node->setUserData(data.get());
+
+        /// Set up remote.
+        vrpn_Tracker_Remote *tkr = m_mainloop->container().add(
+            new vrpn_Tracker_Remote(device.c_str()));
+        tkr->register_change_handler(static_cast<void *>(node.get()), cb,
+                                     sensor);
 
         return node;
     }
-    osg::ref_ptr<OSVRContext> m_ctx;
+    osg::ref_ptr<VRPNMainloop> m_mainloop;
     osg::ref_ptr<osg::PositionAttitudeTransform> m_scene;
     osg::ref_ptr<osg::MatrixTransform> m_smallAxes;
 };
@@ -154,11 +152,17 @@ int main(int argc, char **argv) {
     args.getApplicationUsage()->setDescription(
         args.getApplicationName() +
         " is a tool for visualizing tracking data from the OSVR system.");
-    // args.getApplicationUsage()->setCommandLineUsage(args.getApplicationName()
-    // + " [options] osvrpath ...");
+    args.getApplicationUsage()->setCommandLineUsage(args.getApplicationName() +
+                                                    " [options]");
+    args.getApplicationUsage()->addCommandLineOption(
+        "--pose <device> <sensor>",
+        "View a VRPN device's full pose information for the given sensor");
+    args.getApplicationUsage()->addCommandLineOption(
+        "--ori <device> <sensor>",
+        "View a VRPN device's orientation information for the given sensor");
 
     /// Init the OSG viewer
-    osgViewer::Viewer viewer(args);
+    osgViewer::Viewer viewer;
     viewer.setUpViewInWindow(20, 20, 640, 480);
 
     osg::ApplicationUsage::Type helpType;
@@ -172,10 +176,23 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (args.argc() <= 1) {
+        args.getApplicationUsage()->write(
+            std::cout, osg::ApplicationUsage::COMMAND_LINE_OPTION);
+        return 1;
+    }
+
     TrackerViewApp app;
-    app.addPoseTracker("/me/hands/left");
-    app.addPoseTracker("/me/hands/right");
-    app.addOrientationTracker("/me/head");
+
+    std::string device;
+    int sensor;
+    while (args.read("--pose", device, sensor)) {
+        app.addPoseTracker(device, sensor);
+    }
+
+    while (args.read("--ori", device, sensor)) {
+        app.addOrientationTracker(device, sensor);
+    }
 
     args.reportRemainingOptionsAsUnrecognized();
 

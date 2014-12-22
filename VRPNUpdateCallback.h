@@ -15,25 +15,23 @@
 // (Final version intended to be licensed under
 // the Apache License, Version 2.0)
 
-#ifndef INCLUDED_OSVRUpdateCallback_h_GUID_E58659E1_0843_429C_C9C9_B75B49A225FE
-#define INCLUDED_OSVRUpdateCallback_h_GUID_E58659E1_0843_429C_C9C9_B75B49A225FE
+#ifndef INCLUDED_VRPNUpdateCallback_h_GUID_365D08CA_0F24_4B81_D344_802E7755C4F6
+#define INCLUDED_VRPNUpdateCallback_h_GUID_365D08CA_0F24_4B81_D344_802E7755C4F6
 
 // Internal Includes
 // - none
 
 // Library/third-party includes
-#include <osvr/ClientKit/Context_decl.h>
-
 #include <osg/NodeCallback>
 
 // Standard includes
 // - none
 
-class OSVRUpdateCallback : public osg::NodeCallback {
+class VRPNUpdateCallback : public osg::NodeCallback {
   public:
-    OSVRUpdateCallback();
-    virtual ~OSVRUpdateCallback();
+    VRPNUpdateCallback();
+    virtual ~VRPNUpdateCallback();
     virtual void operator()(osg::Node *node, osg::NodeVisitor *nv);
 };
 
-#endif // INCLUDED_OSVRUpdateCallback_h_GUID_E58659E1_0843_429C_C9C9_B75B49A225FE
+#endif // INCLUDED_VRPNUpdateCallback_h_GUID_365D08CA_0F24_4B81_D344_802E7755C4F6

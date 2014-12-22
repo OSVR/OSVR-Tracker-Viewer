@@ -16,8 +16,8 @@
 // the Apache License, Version 2.0)
 
 // Internal Includes
-#include "OSVRUpdateCallback.h"
-#include "OSVRContext.h"
+#include "VRPNUpdateCallback.h"
+#include "VRPNMainloop.h"
 
 // Library/third-party includes
 #include <osg/Node>
@@ -26,13 +26,13 @@
 // Standard includes
 // - none
 
-OSVRUpdateCallback::OSVRUpdateCallback() {}
+VRPNUpdateCallback::VRPNUpdateCallback() {}
 
-void OSVRUpdateCallback::operator()(osg::Node *node, osg::NodeVisitor *nv) {
-    OSVRContext *ctx = dynamic_cast<OSVRContext *>(node->getUserData());
-    BOOST_ASSERT(ctx);
-    ctx->update();
+void VRPNUpdateCallback::operator()(osg::Node *node, osg::NodeVisitor *nv) {
+    VRPNMainloop *mainloop = dynamic_cast<VRPNMainloop *>(node->getUserData());
+    BOOST_ASSERT(mainloop);
+    mainloop->mainloop();
     // continue traversal
     traverse(node, nv);
 }
-OSVRUpdateCallback::~OSVRUpdateCallback() {}
+VRPNUpdateCallback::~VRPNUpdateCallback() {}
