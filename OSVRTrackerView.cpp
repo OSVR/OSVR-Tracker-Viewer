@@ -28,6 +28,7 @@
 #include <osg/PositionAttitudeTransform>
 #include <osg/MatrixTransform>
 #include <osg/NodeCallback>
+#include <osg/LineWidth>
 
 #include <osgDB/ReadFile>
 
@@ -38,6 +39,8 @@
 
 // Standard includes
 #include <iostream>
+#include <cmath>                            // for floor
+
 
 /// @brief A struct that does our casting for us.
 struct CallbackHelper {
@@ -66,6 +69,115 @@ void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
     // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
 }
 
+/// A little utility class to draw a simple grid.
+class Grid : public osg::Group {
+public:
+    Grid(int line_count = 49, float line_spacing = 1.0f, int bold_every_n = 0)
+    {
+        this->addChild(make_grid(line_count, line_spacing));
+        std::cout << "Regular: count = " << line_count << ", spacing = " << line_spacing << std::endl;
+
+        // Bold grid
+        if (bold_every_n > 0) {
+            line_count = std::floor(line_count / bold_every_n) + 1;
+            line_spacing = line_spacing * bold_every_n;
+
+            std::cout << "Bold: count = " << line_count << ", spacing = " << line_spacing << std::endl;
+
+            osg::MatrixTransform* mt = make_grid(line_count, line_spacing);
+
+            osg::StateSet* stateset = new osg::StateSet();
+            osg::LineWidth* linewidth = new osg::LineWidth();
+            linewidth->setWidth(2.0f);
+            stateset->setAttributeAndModes(linewidth, osg::StateAttribute::ON);
+            stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+            mt->setStateSet(stateset);
+
+            this->addChild(mt);
+        }
+
+        // Heavy origin lines
+        this-addChild(make_axes(line_count, line_spacing));
+    }
+
+    osg::MatrixTransform* make_grid(const int line_count, const float line_spacing)
+    {
+        const int numVertices = 2 * 2 * line_count;
+        osg::Vec3 vertices[numVertices];
+        float length = (line_count - 1) * line_spacing;
+        int ptr = 0;
+
+        for (int i = 0; i < line_count; ++i) {
+            vertices[ptr++].set(-length / 2 + i * line_spacing, length / 2, 0.0f);
+            vertices[ptr++].set(-length / 2 + i * line_spacing, -length / 2, 0.0f);
+        }
+
+        for (int i = 0; i < line_count; ++i) {
+            vertices[ptr++].set(length / 2, -length / 2 + i * line_spacing, 0.0f);
+            vertices[ptr++].set(-length / 2, -length / 2 + i * line_spacing, 0.0f);
+        }
+
+        osg::Geometry* geometry = new osg::Geometry;
+        geometry->setVertexArray(new osg::Vec3Array(numVertices, vertices));
+        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, numVertices));
+
+        osg::Geode* geode = new osg::Geode;
+        geode->addDrawable(geometry);
+        geode->getOrCreateStateSet()->setMode(GL_LIGHTING, 0);
+
+        osg::MatrixTransform* grid_transform = new osg::MatrixTransform;
+        grid_transform->setMatrix(osg::Matrix::rotate(osg::PI_2, 1, 0, 0));
+        grid_transform->addChild(geode);
+
+        return grid_transform;
+    }
+
+    osg::MatrixTransform* make_axes(const int line_count, const float line_spacing)
+    {
+        const float length = (line_count - 1) * line_spacing;
+        const int num_vertices = 6;
+        osg::Vec3 vertices[num_vertices];
+        vertices[0].set(-length / 2.0, 0.0, 0.0);
+        vertices[1].set(length / 2.0, 0.0, 0.0);
+        vertices[2].set(0.0, -length / 2.0, 0.0);
+        vertices[3].set(0.0, length / 2.0, 0.0);
+        vertices[4].set(0.0, 0.0, -length / 2.0);
+        vertices[5].set(0.0, 0.0, length / 2.0);
+
+        osg::Vec4Array* colors = new osg::Vec4Array(num_vertices);
+        (*colors)[0].set(1.0, 0.0, 0.0, 1.0);
+        (*colors)[1].set(1.0, 0.0, 0.0, 1.0);
+        (*colors)[2].set(0.0, 0.0, 1.0, 1.0);
+        (*colors)[3].set(0.0, 0.0, 1.0, 1.0);
+        (*colors)[4].set(0.0, 1.0, 0.0, 1.0);
+        (*colors)[5].set(0.0, 1.0, 0.0, 1.0);
+
+        osg::Geometry* geometry = new osg::Geometry;
+        geometry->setVertexArray(new osg::Vec3Array(num_vertices, vertices));
+        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, num_vertices));
+        geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
+
+        osg::Geode* geode = new osg::Geode;
+        geode->addDrawable(geometry);
+        geode->getOrCreateStateSet()->setMode(GL_LIGHTING, 0);
+
+        osg::MatrixTransform* grid_transform = new osg::MatrixTransform;
+        grid_transform->setMatrix(osg::Matrix::rotate(osg::PI_2, 1, 0, 0));
+        grid_transform->addChild(geode);
+
+        osg::StateSet* stateset = new osg::StateSet();
+        osg::LineWidth* linewidth = new osg::LineWidth();
+        linewidth->setWidth(4.0f);
+        stateset->setAttributeAndModes(linewidth, osg::StateAttribute::ON);
+        stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+        grid_transform->setStateSet(stateset);
+
+        return grid_transform;
+    }
+
+};
+
+
 class TrackerViewApp {
   public:
     static double worldAxesScale() { return 0.2; }
@@ -78,7 +190,8 @@ class TrackerViewApp {
                                                   /// the context.
           ,
           m_scene(new osg::PositionAttitudeTransform),
-          m_smallAxes(new osg::MatrixTransform) {
+          m_smallAxes(new osg::MatrixTransform),
+          m_numTrackers(0) {
 
         /// Transform into default OSVR coordinate system: z near.
         m_scene->setAttitude(osg::Quat(90, osg::Vec3(1, 0, 0)));
@@ -91,36 +204,48 @@ class TrackerViewApp {
         /// Load the basic model for axes
         osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile("RPAxes.osg");
 
-        {
-            /// World axes
-            osg::ref_ptr<osg::MatrixTransform> worldAxes =
-                new osg::MatrixTransform;
-            worldAxes->setMatrix(osg::Matrixd::scale(
-                worldAxesScale(), worldAxesScale(), worldAxesScale()));
-            worldAxes->addChild(axes);
-            m_scene->addChild(worldAxes.get());
-        }
+        //{
+        //    /// World axes
+        //    osg::ref_ptr<osg::MatrixTransform> worldAxes =
+        //        new osg::MatrixTransform;
+        //    worldAxes->setMatrix(osg::Matrixd::scale(
+        //        worldAxesScale(), worldAxesScale(), worldAxesScale()));
+        //    worldAxes->addChild(axes);
+        //    m_scene->addChild(worldAxes.get());
+        //}
 
         /// Small axes for trackers
         m_smallAxes->setMatrix(osg::Matrixd::scale(
             trackerAxesScale(), trackerAxesScale(), trackerAxesScale()));
         m_smallAxes->addChild(axes.get());
+
+        /// Grid
+        m_scene->addChild(new Grid(16, 0.1, 5));
     }
 
     osg::ref_ptr<osg::PositionAttitudeTransform> getScene() { return m_scene; }
 
     void addPoseTracker(std::string const &path) {
         m_addTracker(&poseCallback, path);
+        m_numTrackers++;
     }
 
     void addOrientationTracker(std::string const &path) {
         osg::ref_ptr<osg::MatrixTransform> node =
             m_addTracker(&orientationCallback, path);
 
+        /*
         /// Offset orientation-only trackers up by 1 unit (meter)
         osg::Matrix mat;
         mat.setTrans(0, 1, 0);
         node->setMatrix(mat);
+        */
+
+        m_numTrackers++;
+    }
+
+    int getNumTrackers() const {
+        return m_numTrackers;
     }
 
   private:
@@ -145,6 +270,8 @@ class TrackerViewApp {
     osg::ref_ptr<OSVRContext> m_ctx;
     osg::ref_ptr<osg::PositionAttitudeTransform> m_scene;
     osg::ref_ptr<osg::MatrixTransform> m_smallAxes;
+
+    int m_numTrackers;
 };
 
 int main(int argc, char **argv) {
@@ -154,8 +281,10 @@ int main(int argc, char **argv) {
     args.getApplicationUsage()->setDescription(
         args.getApplicationName() +
         " is a tool for visualizing tracking data from the OSVR system.");
-    // args.getApplicationUsage()->setCommandLineUsage(args.getApplicationName()
-    // + " [options] osvrpath ...");
+    args.getApplicationUsage()->setCommandLineUsage(args.getApplicationName() +
+                                                    " [options] osvrpath ...");
+    args.getApplicationUsage()->addCommandLineOption("--orientation <path>", "add an orientation tracker");
+    args.getApplicationUsage()->addCommandLineOption("--pose <path>", "add a pose tracker");
 
     /// Init the OSG viewer
     osgViewer::Viewer viewer(args);
@@ -173,9 +302,33 @@ int main(int argc, char **argv) {
     }
 
     TrackerViewApp app;
-    app.addPoseTracker("/me/hands/left");
-    app.addPoseTracker("/me/hands/right");
-    app.addOrientationTracker("/me/head");
+
+    std::string path;
+
+    // Get pose paths
+    while (args.read("--pose", path)) {
+        app.addPoseTracker(path);
+    }
+
+    // Get orientation paths
+    while (args.read("--orientation", path)) {
+        app.addOrientationTracker(path);
+    }
+
+    // Assume free strings are pose paths
+    for (int pos = 1; pos < args.argc(); ++pos) {
+        if (args.isOption(pos))
+            continue;
+
+        app.addPoseTracker(args[pos]);
+    }
+
+    // If no trackers were specified, fall back on these defaults
+    if (0 == app.getNumTrackers()) {
+        app.addPoseTracker("/me/hands/left");
+        app.addPoseTracker("/me/hands/right");
+        app.addOrientationTracker("/me/head");
+    }
 
     args.reportRemainingOptionsAsUnrecognized();
 
