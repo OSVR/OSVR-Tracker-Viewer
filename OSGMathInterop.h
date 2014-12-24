@@ -32,7 +32,7 @@
 // - none
 
 inline osg::Vec3 toVec3(OSVR_Vec3 const &v) {
-    return osg::Vec3(v.data[0], v.data[1], v.data[2]);
+    return osg::Vec3(static_cast<float>(v.data[0]), static_cast<float>(v.data[1]), static_cast<float>(v.data[2]));
 }
 
 inline osg::Quat toQuat(OSVR_Quaternion const &q) {

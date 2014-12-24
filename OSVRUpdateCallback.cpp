@@ -36,3 +36,4 @@ void OSVRUpdateCallback::operator()(osg::Node *node, osg::NodeVisitor *nv) {
     traverse(node, nv);
 }
 OSVRUpdateCallback::~OSVRUpdateCallback() {}
+

@@ -72,15 +72,15 @@ void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
 /// A little utility class to draw a simple grid.
 class Grid : public osg::Group {
 public:
-    Grid(int line_count = 49, float line_spacing = 1.0f, int bold_every_n = 0)
+    Grid(unsigned int line_count = 49, float line_spacing = 1.0f, unsigned int bold_every_n = 0)
     {
         this->addChild(make_grid(line_count, line_spacing));
         std::cout << "Regular: count = " << line_count << ", spacing = " << line_spacing << std::endl;
 
         // Bold grid
         if (bold_every_n > 0) {
-            line_count = std::floor(line_count / bold_every_n) + 1;
-            line_spacing = line_spacing * bold_every_n;
+            line_count = static_cast<unsigned int>(std::floor(line_count / bold_every_n)) + 1;
+            line_spacing *= bold_every_n;
 
             std::cout << "Bold: count = " << line_count << ", spacing = " << line_spacing << std::endl;
 
@@ -97,29 +97,29 @@ public:
         }
 
         // Heavy origin lines
-        this-addChild(make_axes(line_count, line_spacing));
+        this->addChild(make_axes(line_count, line_spacing));
     }
 
-    osg::MatrixTransform* make_grid(const int line_count, const float line_spacing)
+    osg::MatrixTransform* make_grid(const unsigned int line_count, const float line_spacing)
     {
-        const int numVertices = 2 * 2 * line_count;
-        osg::Vec3 vertices[numVertices];
-        float length = (line_count - 1) * line_spacing;
-        int ptr = 0;
+        const unsigned int numVertices = 2 * 2 * line_count;
+        osg::Vec3Array* vertices = new osg::Vec3Array(numVertices);
+        float length = static_cast<float>(line_count - 1) * line_spacing;
+        osg::Vec3Array::size_type ptr = 0;
 
-        for (int i = 0; i < line_count; ++i) {
-            vertices[ptr++].set(-length / 2 + i * line_spacing, length / 2, 0.0f);
-            vertices[ptr++].set(-length / 2 + i * line_spacing, -length / 2, 0.0f);
+        for (unsigned int i = 0; i < line_count; ++i) {
+            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing, length / 2.0f, 0.0f);
+            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing, -length / 2.0f, 0.0f);
         }
 
-        for (int i = 0; i < line_count; ++i) {
-            vertices[ptr++].set(length / 2, -length / 2 + i * line_spacing, 0.0f);
-            vertices[ptr++].set(-length / 2, -length / 2 + i * line_spacing, 0.0f);
+        for (unsigned int i = 0; i < line_count; ++i) {
+            (*vertices)[ptr++].set(length / 2.0f, -length / 2.0f + i * line_spacing, 0.0f);
+            (*vertices)[ptr++].set(-length / 2.0f, -length / 2.0f + i * line_spacing, 0.0f);
         }
 
         osg::Geometry* geometry = new osg::Geometry;
-        geometry->setVertexArray(new osg::Vec3Array(numVertices, vertices));
-        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, numVertices));
+        geometry->setVertexArray(vertices);
+        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, static_cast<GLsizei>(numVertices)));
 
         osg::Geode* geode = new osg::Geode;
         geode->addDrawable(geometry);
@@ -132,17 +132,17 @@ public:
         return grid_transform;
     }
 
-    osg::MatrixTransform* make_axes(const int line_count, const float line_spacing)
+    osg::MatrixTransform* make_axes(const unsigned int line_count, const float line_spacing)
     {
         const float length = (line_count - 1) * line_spacing;
         const int num_vertices = 6;
-        osg::Vec3 vertices[num_vertices];
-        vertices[0].set(-length / 2.0, 0.0, 0.0);
-        vertices[1].set(length / 2.0, 0.0, 0.0);
-        vertices[2].set(0.0, -length / 2.0, 0.0);
-        vertices[3].set(0.0, length / 2.0, 0.0);
-        vertices[4].set(0.0, 0.0, -length / 2.0);
-        vertices[5].set(0.0, 0.0, length / 2.0);
+        osg::Vec3Array* vertices = new osg::Vec3Array(num_vertices);
+        (*vertices)[0].set(-length / 2.0f, 0.0f, 0.0f);
+        (*vertices)[1].set(length / 2.0f, 0.0f, 0.0f);
+        (*vertices)[2].set(0.0f, -length / 2.0f, 0.0f);
+        (*vertices)[3].set(0.0f, length / 2.0f, 0.0f);
+        (*vertices)[4].set(0.0f, 0.0f, -length / 2.0f);
+        (*vertices)[5].set(0.0f, 0.0f, length / 2.0f);
 
         osg::Vec4Array* colors = new osg::Vec4Array(num_vertices);
         (*colors)[0].set(1.0, 0.0, 0.0, 1.0);
@@ -153,7 +153,7 @@ public:
         (*colors)[5].set(0.0, 1.0, 0.0, 1.0);
 
         osg::Geometry* geometry = new osg::Geometry;
-        geometry->setVertexArray(new osg::Vec3Array(num_vertices, vertices));
+        geometry->setVertexArray(vertices);
         geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, num_vertices));
         geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
 
@@ -220,7 +220,7 @@ class TrackerViewApp {
         m_smallAxes->addChild(axes.get());
 
         /// Grid
-        m_scene->addChild(new Grid(16, 0.1, 5));
+        m_scene->addChild(new Grid(16, 0.1f, 5));
     }
 
     osg::ref_ptr<osg::PositionAttitudeTransform> getScene() { return m_scene; }

@@ -38,3 +38,4 @@ osvr::clientkit::ClientContext &OSVRContext::getContext() { return m_ctx; }
 void OSVRContext::update() { m_ctx.update(); }
 
 OSVRContext::~OSVRContext() {}
+
