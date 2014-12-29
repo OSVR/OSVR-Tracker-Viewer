@@ -29,6 +29,7 @@
 #include <osg/MatrixTransform>
 #include <osg/NodeCallback>
 #include <osg/LineWidth>
+#include <osg/Version>
 
 #include <osgDB/ReadFile>
 
@@ -155,7 +156,12 @@ public:
         osg::Geometry* geometry = new osg::Geometry;
         geometry->setVertexArray(vertices);
         geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, num_vertices));
+#if OSG_VERSION_GREATER_THAN(3,1,7)
         geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
+#else
+		geometry->setColorArray(colors);
+		geometry->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+#endif
 
         osg::Geode* geode = new osg::Geode;
         geode->addDrawable(geometry);
