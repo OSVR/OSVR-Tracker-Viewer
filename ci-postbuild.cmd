@@ -8,7 +8,7 @@ xcopy %SRC%\bin\osg*-osgUtil.dll %DEST% /Y
 xcopy %SRC%\bin\osg*-osgViewer.dll %DEST% /Y
 xcopy %SRC%\bin\*-OpenThreads.dll %DEST% /Y
 
-xcopy %SRC%\bin\osgPlugins*.* %DEST% /Y /S
+for /D %%F in (%SRC%\bin\osgPlugins*) do xcopy %%F %DEST% /Y /S
 for %%F in (%SRC%\osvr-ver.txt,%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrTransform.dll,%SRC%\bin\osvrUtil.dll) do ( xcopy %%F %DEST% /Y )
 
 xcopy redist\*.* %DEST% /Y
