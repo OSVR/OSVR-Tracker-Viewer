@@ -8,12 +8,12 @@ xcopy %SRC%\bin\osg*-osgUtil.dll %DEST% /Y
 xcopy %SRC%\bin\osg*-osgViewer.dll %DEST% /Y
 xcopy %SRC%\bin\*-OpenThreads.dll %DEST% /Y
 
-xcopy %SRC%\bin\osgPlugins* %DEST% /Y /S
-
-xcopy %SRC%\osvr-ver.txt %SRC%\bin\osvrClientKit.dll %SRC%\bin\osvrClient.dll %SRC%\bin\osvrTransform.dll %SRC%\bin\osvrUtil.dll %DEST% /Y
+xcopy %SRC%\bin\osgPlugins*.* %DEST% /Y /S
+for %%F in (%SRC%\osvr-ver.txt,%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrTransform.dll,%SRC%\bin\osvrUtil.dll) do ( xcopy %%F %DEST% /Y )
 
 xcopy redist\*.* %DEST% /Y
 
 set /p VER=<%SRC%\osvr-ver.txt
-move install OSVR-Tracker-View-built-with-%VER%
-7za a OSVR-Tracker-View-built-with-%VER%.7z OSVR-Tracker-View-built-with-%VER%\*
+set OUTPUT=OSVR-Tracker-View-built-with-%VER%-viewer-%BUILD_NUMBER%
+move install %OUTPUT%
+7za a %OUTPUT%.7z %OUTPUT%\*
