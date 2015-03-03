@@ -13,8 +13,14 @@ find_package(OpenSceneGraph COMPONENTS OpenThreads osgDB osgViewer osgGA osgUtil
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
+if(WIN32)
+    set(TRACKER_VIEW_RESOURCE osvr_tracker_view.rc)
+else()
+    set(TRACKER_VIEW_RESOURCE)
+endif()
+
 add_executable(OSVRTrackerView
-    OSGMathInterop.h
+    ${TRACKER_VIEW_RESOURCE}
     OSGMathInterop.h
     OSVRContext.cpp
     OSVRContext.h
