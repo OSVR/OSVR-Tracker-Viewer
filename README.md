@@ -24,11 +24,9 @@ As is convention, the X axis is red, Y axis is green, and Z axis is blue (xyz-rg
 ## Dependencies
 
 - OSVR-Core
-- OpenSceneGraph: tested with a post-2.8.5 release
+- OpenSceneGraph: tested with a post-2.8.5 release, and a recent 3.x release, so pretty much any version from the past few years. **Note that you must use a version of OpenSceneGraph built with the same version of Visual Studio you're using** (if you're using Visual Studio) - you can use an OSVR-Core binary snapshot itself with a wide range of different versions, but OSG must match versions.
 
 ## License
 
-Copyright 2014 Sensics, Inc. All rights reserved.
-
-(Intended to eventually be released under the Apache License v2.0)
+This project: Licensed under the Apache License, Version 2.0.
 
