@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(OSVRTrackerView)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-include(CMakeBoostHelper)
 include(EnableExtraCompilerWarnings)
 globally_enable_extra_compiler_warnings()
 
-find_package(Boost REQUIRED)
 find_package(osvr REQUIRED)
+find_package(Boost REQUIRED)
 find_package(OpenSceneGraph COMPONENTS OpenThreads osgDB osgViewer osgGA osgUtil REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} ${OPENSCENEGRAPH_INCLUDE_DIRS})
@@ -32,6 +31,7 @@ add_executable(OSVRTrackerView
 target_link_libraries(OSVRTrackerView osvr::osvrClientKitCpp ${OPENSCENEGRAPH_LIBRARIES})
 
 set(CMAKE_INSTALL_BINDIR .)
+set(CMAKE_INSTALL_DOCDIR .)
 
 install(TARGETS OSVRTrackerView
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
