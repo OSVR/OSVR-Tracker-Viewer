@@ -37,3 +37,26 @@ install(TARGETS OSVRTrackerView
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/RPAxes.osg"
         DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
+
+
+# For generating documentation in HTML
+if(WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third-party/discount-windows-bins")
+endif()
+find_package(Markdown)
+
+###
+# Docs
+###
+# Convert the README to HTML if we can
+set(MARKDOWN_INPUT README.md CONTRIBUTING.md)
+if(MARKDOWN_FOUND)
+    include(UseMarkdown)
+    add_markdown_target(markdown_docs "${CMAKE_CURRENT_BINARY_DIR}" ${MARKDOWN_INPUT})
+
+    install_markdown_target(markdown_docs DESTINATION ${CMAKE_INSTALL_DOCDIR})
+else()
+    install(FILES ${MARKDOWN_INPUT} DESTINATION ${CMAKE_INSTALL_DOCDIR})
+endif()
+
+install(FILES LICENSE NOTICE DESTINATION ${CMAKE_INSTALL_DOCDIR})
