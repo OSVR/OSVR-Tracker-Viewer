@@ -1,4 +1,9 @@
 # OSVR Tracker Viewer
+> Maintained at <https://github.com/OSVR/OSVR-Tracker-Viewer>
+>
+> For details, see <http://osvr.github.io>
+>
+> For support, see <http://support.osvr.com>
 
 Utility for viewing tracker (pose, position, orientation) data from the OSVR framework.
 
