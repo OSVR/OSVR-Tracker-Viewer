@@ -198,9 +198,9 @@ class TrackerViewApp {
 
     TrackerViewApp()
         : m_ctx(new OSVRContext(
-              "org.opengoggles.osvrtrackerview")) /// Set up OSVR: making an OSG
-                                                  /// ref-counted object hold
-                                                  /// the context.
+              "org.osvr.trackerview")) /// Set up OSVR: making an OSG
+                                       /// ref-counted object hold
+                                       /// the context.
           ,
           m_scene(new osg::PositionAttitudeTransform),
           m_smallAxes(new osg::MatrixTransform),
