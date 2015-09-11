@@ -28,6 +28,8 @@
 #include "OSVRInterfaceData.h"
 #include "OSVRContext.h"
 
+#include "RPAxes.osg.h" // Header file generated from axes model
+
 // Library/third-party includes
 #include <osvr/ClientKit/ClientKit.h>
 
@@ -50,14 +52,16 @@
 #include <cmath> // for floor
 
 
-static const char MODEL_FN[] = "RPAxes.osg";
 static const char MESSAGE_PREFIX[] = "\n[TrackerViewer] ";
 
 osg::ref_ptr<osg::Node> loadAxesModel() {
-    osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(MODEL_FN);
+    std::string modelData(RPAxes_osg, RPAxes_osg_len);
+    modelData += ".osgs"; // Load OSG format, where the filename is the data string.
+    osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(modelData);
     if (!axes) {
-        std::cerr << MESSAGE_PREFIX << "Error: Could not read model "
-            << MODEL_FN << std::endl;
+        std::cerr << MESSAGE_PREFIX
+                  << "Error: Could not read model from embedded string!"
+                  << std::endl;
         throw std::runtime_error("Could not load model");
     }
     return axes;

@@ -27,7 +27,8 @@ add_executable(OSVRTrackerView
     OSVRInterfaceData.h
     OSVRUpdateCallback.cpp
     OSVRUpdateCallback.h
-    OSVRTrackerView.cpp)
+    OSVRTrackerView.cpp
+    RPAxes.osg.h)
 target_link_libraries(OSVRTrackerView osvr::osvrClientKitCpp ${OPENSCENEGRAPH_LIBRARIES})
 
 set(CMAKE_INSTALL_BINDIR .)
