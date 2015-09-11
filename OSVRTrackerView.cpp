@@ -422,7 +422,14 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
+    /// Manually create the viewer manipulator so we can tweak the startup.
+    osg::ref_ptr<osgGA::TrackballManipulator> manip =
+        new osgGA::TrackballManipulator();
+    viewer.setCameraManipulator(manip.get());
+
+    /// Experimentally, this looks good. Might have to zoom out for larger
+    /// tracked volumes, but a better starting place than default.
+    manip->setDistance(1.0);
 
     viewer.addEventHandler(new osgViewer::WindowSizeHandler);
 
