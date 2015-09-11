@@ -425,8 +425,7 @@ int main(int argc, char **argv) {
     viewer.setCameraManipulator(new osgGA::TrackballManipulator());
 
     viewer.addEventHandler(new osgViewer::WindowSizeHandler);
-    /// Go!
-    viewer.realize();
 
+    /// Go!
     return viewer.run();
 }
