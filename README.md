@@ -19,7 +19,6 @@ If no paths are specified on the command line, it will automatically opens these
 - Pose
 	- `/me/hands/left`
 	- `/me/hands/right`
-- Orientation (displaced vertically for visibility)
 	- `/me/head`
 
 The large set of axes is the world coordinates in OSVR - the viewer loads in the standard orientation. Each smaller set of axes is a tracker.
