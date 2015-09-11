@@ -203,6 +203,8 @@ class Grid : public osg::Group {
 
 static const char MODEL_FN[] = "RPAxes.osg";
 
+static const char MESSAGE_PREFIX[] = "\n[TrackerViewer] ";
+
 class TrackerViewApp {
   public:
     static double worldAxesScale() { return 0.2; }
@@ -342,13 +344,14 @@ int main(int argc, char **argv) {
         }
         // If no trackers were specified, fall back on these defaults
         if (0 == app.getNumTrackers()) {
-            std::cout << "\n\nTracker Viewer: No valid arguments passed: using "
-                         "a default of --pose "
-                         "/me/hands/left --pose /me/hands/right --pose "
-                         "/me/head\nYou can specify --pose or --orientation "
-                         "then a path for as many tracker sensors as you want. "
-                         "Run with the command line argument --help "
-                         "for more info.\n"
+            std::cout << "\n" << MESSAGE_PREFIX
+                      << "No arguments passed: default is as if you passed the "
+                         "following:\n "
+                         "--pose /me/hands/left --pose /me/hands/right --pose "
+                         "/me/head\n"
+                         "You can specify --pose or --orientation then a path, "
+                         "as many times as you want.\n"
+                         "Pass the argument --help for more info.\n"
                       << std::endl;
             app.addPoseTracker("/me/hands/left");
             app.addPoseTracker("/me/hands/right");
@@ -363,8 +366,8 @@ int main(int argc, char **argv) {
 
         viewer.setSceneData(app.getScene());
     } catch (std::exception const &e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-        std::cerr << "Press enter to exit!" << std::endl;
+        std::cerr << MESSAGE_PREFIX << "Exception: " << e.what() << std::endl;
+        std::cerr << MESSAGE_PREFIX << "Press enter to exit!" << std::endl;
         std::cin.ignore();
         return -1;
     }
