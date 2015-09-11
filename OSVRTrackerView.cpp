@@ -82,8 +82,10 @@ class Grid : public osg::Group {
     Grid(unsigned int line_count = 49, float line_spacing = 1.0f,
          unsigned int bold_every_n = 0) {
         this->addChild(make_grid(line_count, line_spacing));
+#if 0
         std::cout << "Regular: count = " << line_count
                   << ", spacing = " << line_spacing << std::endl;
+#endif
 
         // Bold grid
         if (bold_every_n > 0) {
@@ -92,9 +94,10 @@ class Grid : public osg::Group {
                          1;
             line_spacing *= bold_every_n;
 
+#if 0
             std::cout << "Bold: count = " << line_count
                       << ", spacing = " << line_spacing << std::endl;
-
+#endif
             osg::MatrixTransform *mt = make_grid(line_count, line_spacing);
 
             osg::StateSet *stateset = new osg::StateSet();
