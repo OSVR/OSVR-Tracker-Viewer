@@ -36,7 +36,7 @@ OSVRContext::OSVRContext(std::string const &appId) : m_ctx(appId.c_str()) {}
 
 osg::ref_ptr<OSVRInterfaceData>
 OSVRContext::getInterface(std::string const &path) {
-    osg::ref_ptr<OSVRInterfaceData> data = new OSVRInterfaceData(this, path);
+    osg::ref_ptr<OSVRInterfaceData> data = new OSVRInterfaceData(*this, path);
     return data;
 }
 
@@ -45,4 +45,3 @@ osvr::clientkit::ClientContext &OSVRContext::getContext() { return m_ctx; }
 void OSVRContext::update() { m_ctx.update(); }
 
 OSVRContext::~OSVRContext() {}
-

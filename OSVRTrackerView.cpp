@@ -49,33 +49,6 @@
 #include <iostream>
 #include <cmath> // for floor
 
-/// @brief A struct that does our casting for us.
-struct CallbackHelper {
-    CallbackHelper(void *userdata)
-        : xform(static_cast<osg::MatrixTransform *>(userdata)),
-          iface(dynamic_cast<OSVRInterfaceData *>(xform->getUserData())) {}
-    osg::MatrixTransform *xform;
-    OSVRInterfaceData *iface;
-};
-
-void poseCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
-                  const OSVR_PoseReport *report) {
-    CallbackHelper cb(userdata);
-    cb.xform->setMatrix(toMatrix(report->pose));
-
-    // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
-}
-
-void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
-                         const OSVR_OrientationReport *report) {
-    CallbackHelper cb(userdata);
-    osg::Matrix mat = cb.xform->getMatrix();
-    mat.setRotate(toQuat(report->rotation));
-    cb.xform->setMatrix(mat);
-
-    // std::cout << "Got report for " << cb.iface->getPath() << std::endl;
-}
-
 /// A little utility class to draw a simple grid.
 class Grid : public osg::Group {
   public:
@@ -205,6 +178,80 @@ static const char MODEL_FN[] = "RPAxes.osg";
 
 static const char MESSAGE_PREFIX[] = "\n[TrackerViewer] ";
 
+class TrackedSensor : public OSVRInterfaceData {
+  public:
+    TrackedSensor(OSVRContext &ctx, std::string const &path,
+                  osg::MatrixTransform &owningNode, osg::Node &child)
+        : OSVRInterfaceData(ctx, path), enabledYet_(false) {
+
+        // Create the switch: child of the transform we'll edit, parent of the
+        // child passed to us.
+        osg::ref_ptr<osg::Switch> switchNode = new osg::Switch;
+        owningNode.addChild(switchNode.get());
+        switchNode->addChild(&child);
+        // Start with switch off: don't display until we get data.
+        switchNode->setAllChildrenOff();
+
+        // Keep a non-owning copy of the pointer for ourselves, now that someone
+        // else is holding a reference to that node.
+        switchNode_ = switchNode.get();
+    }
+
+    /// Register this callback with the userdata being the MatrixTransform
+    /// pointer
+    static void poseCallback(void *userdata,
+                             const OSVR_TimeValue * /*timestamp*/,
+                             const OSVR_PoseReport *report) {
+        invokeRealCallback(userdata, *report);
+    }
+
+    /// Register this callback with the userdata being the MatrixTransform
+    /// pointer
+    static void orientationCallback(void *userdata,
+                                    const OSVR_TimeValue * /*timestamp*/,
+                                    const OSVR_OrientationReport *report) {
+        invokeRealCallback(userdata, *report);
+    }
+
+  private:
+    template <typename ReportType>
+    static void invokeRealCallback(void *userdata, const ReportType &report) {
+        // Cast our userdata - should be the matrixtransform that owns us.
+        osg::MatrixTransform &xform =
+            *static_cast<osg::MatrixTransform *>(userdata);
+
+        // Now, extract ourselves from that transform
+        TrackedSensor &self =
+            *dynamic_cast<TrackedSensor *>(xform.getUserData());
+
+        // Handle first-time reports
+        if (!self.enabledYet_) {
+            std::cout << MESSAGE_PREFIX << self.getPath()
+                      << " - got first report, enabling display!\n\n"
+                      << std::endl;
+            self.enabledYet_ = true;
+            self.switchNode_->setAllChildrenOn();
+        }
+        // Then, proceed to the work of the "real" callback.
+        // (Overloaded on report type, so this common code can be shared)
+        self.callbackReal(xform, report);
+    }
+    // Real pose callback
+    void callbackReal(osg::MatrixTransform &xform,
+                      const OSVR_PoseReport &report) {
+        xform.setMatrix(toMatrix(report.pose));
+    }
+    // Real orientation callback
+    void callbackReal(osg::MatrixTransform &xform,
+                      const OSVR_OrientationReport &report) {
+        osg::Matrix mat = xform.getMatrix();
+        mat.setRotate(toQuat(report.rotation));
+        xform.setMatrix(mat);
+    }
+    bool enabledYet_;
+    osg::Switch *switchNode_;
+};
+
 class TrackerViewApp {
   public:
     static double worldAxesScale() { return 0.2; }
@@ -230,8 +277,8 @@ class TrackerViewApp {
         /// Load the basic model for axes
         osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(MODEL_FN);
         if (!axes) {
-            std::cerr << "Error: Could not read model " << MODEL_FN
-                      << std::endl;
+            std::cerr << MESSAGE_PREFIX << "Error: Could not read model "
+                      << MODEL_FN << std::endl;
             throw std::runtime_error("Could not load model");
         }
 
@@ -247,13 +294,12 @@ class TrackerViewApp {
     osg::ref_ptr<osg::PositionAttitudeTransform> getScene() { return m_scene; }
 
     void addPoseTracker(std::string const &path) {
-        m_addTracker(&poseCallback, path);
-        m_numTrackers++;
+        m_addTracker(&TrackedSensor::poseCallback, path);
     }
 
     void addOrientationTracker(std::string const &path) {
         osg::ref_ptr<osg::MatrixTransform> node =
-            m_addTracker(&orientationCallback, path);
+            m_addTracker(&TrackedSensor::orientationCallback, path);
 
 #if 0
         /// Offset orientation-only trackers up by 1 unit (meter)
@@ -261,7 +307,6 @@ class TrackerViewApp {
         mat.setTrans(0, 1, 0);
         node->setMatrix(mat);
 #endif
-        m_numTrackers++;
     }
 
     int getNumTrackers() const { return m_numTrackers; }
@@ -270,20 +315,25 @@ class TrackerViewApp {
     template <typename CallbackType>
     osg::ref_ptr<osg::MatrixTransform> m_addTracker(CallbackType cb,
                                                     std::string const &path) {
-        /// Make scenegraph portion
-        osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform;
-        node->addChild(m_smallAxes);
-        m_scene->addChild(node);
+        /// Make a transform node and attach it to the scene.
+        // The tracked sensor class will attach the desired child to the
+        // transform node.
+        osg::ref_ptr<osg::MatrixTransform> xform = new osg::MatrixTransform;
+        m_scene->addChild(xform.get());
 
-        /// Get OSVR interface and set callback
-        osg::ref_ptr<OSVRInterfaceData> data = m_ctx->getInterface(path);
+        /// Create object holding OSVR interface (which will add m_smallAxes to
+        /// the scenegraph) and set callback
+        osg::ref_ptr<TrackedSensor> data =
+            new TrackedSensor(*m_ctx, path, *xform, *m_smallAxes);
         data->getInterface().registerCallback(cb,
-                                              static_cast<void *>(node.get()));
+                                              static_cast<void *>(xform.get()));
 
-        /// Transfer ownership of the interface holder to the node
-        node->setUserData(data.get());
+        /// Transfer ownership of the interface holder/tracked sensor object to
+        /// the transform node
+        xform->setUserData(data.get());
 
-        return node;
+        m_numTrackers++;
+        return xform;
     }
     osg::ref_ptr<OSVRContext> m_ctx;
     osg::ref_ptr<osg::PositionAttitudeTransform> m_scene;

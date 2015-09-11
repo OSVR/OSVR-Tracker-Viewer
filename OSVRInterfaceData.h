@@ -43,7 +43,7 @@ class OSVRContext;
 /// so we can free the interface (and the callback) when the node is destroyed.
 class OSVRInterfaceData : public osg::Referenced {
   public:
-    OSVRInterfaceData(OSVRContext *ctx, std::string const &path);
+    OSVRInterfaceData(OSVRContext &ctx, std::string const &path);
     osvr::clientkit::Interface &getInterface();
 
     std::string const &getPath() const;

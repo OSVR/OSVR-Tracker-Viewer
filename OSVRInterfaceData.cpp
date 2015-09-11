@@ -32,8 +32,8 @@
 // Standard includes
 // - none
 
-OSVRInterfaceData::OSVRInterfaceData(OSVRContext *ctx, std::string const &path)
-    : m_ctx(ctx), m_iface(m_ctx->getContext().getInterface(path)),
+OSVRInterfaceData::OSVRInterfaceData(OSVRContext &ctx, std::string const &path)
+    : m_ctx(&ctx), m_iface(m_ctx->getContext().getInterface(path)),
       m_path(path) {}
 
 osvr::clientkit::Interface &OSVRInterfaceData::getInterface() {
