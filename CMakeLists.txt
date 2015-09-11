@@ -40,7 +40,7 @@ install(TARGETS OSVRTrackerView
 
 # For generating documentation in HTML
 if(WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third-party/discount-windows-bins")
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor/discount-windows-bins")
 endif()
 find_package(Markdown)
 
