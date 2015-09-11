@@ -352,13 +352,15 @@ int main(int argc, char **argv) {
         if (0 == app.getNumTrackers()) {
             std::cout << "\n\nTracker Viewer: No valid arguments passed: using "
                          "a default of --pose "
-                         "/me/hands/left --pose /me/hands/right --orientation "
-                         "/me/head\nRun with the command line argument --help "
-                         "for info.\n"
+                         "/me/hands/left --pose /me/hands/right --pose "
+                         "/me/head\nYou can specify --pose or --orientation "
+                         "then a path for as many tracker sensors as you want. "
+                         "Run with the command line argument --help "
+                         "for more info.\n"
                       << std::endl;
             app.addPoseTracker("/me/hands/left");
             app.addPoseTracker("/me/hands/right");
-            app.addOrientationTracker("/me/head");
+            app.addPoseTracker("/me/head");
         }
         args.reportRemainingOptionsAsUnrecognized();
 
