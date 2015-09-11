@@ -233,16 +233,6 @@ class TrackerViewApp {
             throw std::runtime_error("Could not load model");
         }
 
-        //{
-        //    /// World axes
-        //    osg::ref_ptr<osg::MatrixTransform> worldAxes =
-        //        new osg::MatrixTransform;
-        //    worldAxes->setMatrix(osg::Matrixd::scale(
-        //        worldAxesScale(), worldAxesScale(), worldAxesScale()));
-        //    worldAxes->addChild(axes);
-        //    m_scene->addChild(worldAxes.get());
-        //}
-
         /// Small axes for trackers
         m_smallAxes->setMatrix(osg::Matrixd::scale(
             trackerAxesScale(), trackerAxesScale(), trackerAxesScale()));
