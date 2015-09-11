@@ -253,13 +253,12 @@ class TrackerViewApp {
         osg::ref_ptr<osg::MatrixTransform> node =
             m_addTracker(&orientationCallback, path);
 
-        /*
+#if 0
         /// Offset orientation-only trackers up by 1 unit (meter)
         osg::Matrix mat;
         mat.setTrans(0, 1, 0);
         node->setMatrix(mat);
-        */
-
+#endif
         m_numTrackers++;
     }
 
