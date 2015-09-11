@@ -36,8 +36,6 @@ set(CMAKE_INSTALL_DOCDIR .)
 
 install(TARGETS OSVRTrackerView
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/RPAxes.osg"
-        DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
 
 
 # For generating documentation in HTML
