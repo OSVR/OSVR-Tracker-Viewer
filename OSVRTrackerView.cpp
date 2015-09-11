@@ -47,8 +47,7 @@
 
 // Standard includes
 #include <iostream>
-#include <cmath>                            // for floor
-
+#include <cmath> // for floor
 
 /// @brief A struct that does our casting for us.
 struct CallbackHelper {
@@ -79,23 +78,27 @@ void orientationCallback(void *userdata, const OSVR_TimeValue * /*timestamp*/,
 
 /// A little utility class to draw a simple grid.
 class Grid : public osg::Group {
-public:
-    Grid(unsigned int line_count = 49, float line_spacing = 1.0f, unsigned int bold_every_n = 0)
-    {
+  public:
+    Grid(unsigned int line_count = 49, float line_spacing = 1.0f,
+         unsigned int bold_every_n = 0) {
         this->addChild(make_grid(line_count, line_spacing));
-        std::cout << "Regular: count = " << line_count << ", spacing = " << line_spacing << std::endl;
+        std::cout << "Regular: count = " << line_count
+                  << ", spacing = " << line_spacing << std::endl;
 
         // Bold grid
         if (bold_every_n > 0) {
-            line_count = static_cast<unsigned int>(std::floor(line_count / bold_every_n)) + 1;
+            line_count = static_cast<unsigned int>(
+                             std::floor(line_count / bold_every_n)) +
+                         1;
             line_spacing *= bold_every_n;
 
-            std::cout << "Bold: count = " << line_count << ", spacing = " << line_spacing << std::endl;
+            std::cout << "Bold: count = " << line_count
+                      << ", spacing = " << line_spacing << std::endl;
 
-            osg::MatrixTransform* mt = make_grid(line_count, line_spacing);
+            osg::MatrixTransform *mt = make_grid(line_count, line_spacing);
 
-            osg::StateSet* stateset = new osg::StateSet();
-            osg::LineWidth* linewidth = new osg::LineWidth();
+            osg::StateSet *stateset = new osg::StateSet();
+            osg::LineWidth *linewidth = new osg::LineWidth();
             linewidth->setWidth(2.0f);
             stateset->setAttributeAndModes(linewidth, osg::StateAttribute::ON);
             stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -108,43 +111,48 @@ public:
         this->addChild(make_axes(line_count, line_spacing));
     }
 
-    osg::MatrixTransform* make_grid(const unsigned int line_count, const float line_spacing)
-    {
+    osg::MatrixTransform *make_grid(const unsigned int line_count,
+                                    const float line_spacing) {
         const unsigned int numVertices = 2 * 2 * line_count;
-        osg::Vec3Array* vertices = new osg::Vec3Array(numVertices);
+        osg::Vec3Array *vertices = new osg::Vec3Array(numVertices);
         float length = static_cast<float>(line_count - 1) * line_spacing;
         osg::Vec3Array::size_type ptr = 0;
 
         for (unsigned int i = 0; i < line_count; ++i) {
-            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing, length / 2.0f, 0.0f);
-            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing, -length / 2.0f, 0.0f);
+            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing,
+                                   length / 2.0f, 0.0f);
+            (*vertices)[ptr++].set(-length / 2.0f + i * line_spacing,
+                                   -length / 2.0f, 0.0f);
         }
 
         for (unsigned int i = 0; i < line_count; ++i) {
-            (*vertices)[ptr++].set(length / 2.0f, -length / 2.0f + i * line_spacing, 0.0f);
-            (*vertices)[ptr++].set(-length / 2.0f, -length / 2.0f + i * line_spacing, 0.0f);
+            (*vertices)[ptr++].set(length / 2.0f,
+                                   -length / 2.0f + i * line_spacing, 0.0f);
+            (*vertices)[ptr++].set(-length / 2.0f,
+                                   -length / 2.0f + i * line_spacing, 0.0f);
         }
 
-        osg::Geometry* geometry = new osg::Geometry;
+        osg::Geometry *geometry = new osg::Geometry;
         geometry->setVertexArray(vertices);
-        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, static_cast<GLsizei>(numVertices)));
+        geometry->addPrimitiveSet(new osg::DrawArrays(
+            osg::PrimitiveSet::LINES, 0, static_cast<GLsizei>(numVertices)));
 
-        osg::Geode* geode = new osg::Geode;
+        osg::Geode *geode = new osg::Geode;
         geode->addDrawable(geometry);
         geode->getOrCreateStateSet()->setMode(GL_LIGHTING, 0);
 
-        osg::MatrixTransform* grid_transform = new osg::MatrixTransform;
+        osg::MatrixTransform *grid_transform = new osg::MatrixTransform;
         grid_transform->setMatrix(osg::Matrix::rotate(osg::PI_2, 1, 0, 0));
         grid_transform->addChild(geode);
 
         return grid_transform;
     }
 
-    osg::MatrixTransform* make_axes(const unsigned int line_count, const float line_spacing)
-    {
+    osg::MatrixTransform *make_axes(const unsigned int line_count,
+                                    const float line_spacing) {
         const float length = (line_count - 1) * line_spacing;
         const int num_vertices = 6;
-        osg::Vec3Array* vertices = new osg::Vec3Array(num_vertices);
+        osg::Vec3Array *vertices = new osg::Vec3Array(num_vertices);
         (*vertices)[0].set(-length / 2.0f, 0.0f, 0.0f);
         (*vertices)[1].set(length / 2.0f, 0.0f, 0.0f);
         (*vertices)[2].set(0.0f, -length / 2.0f, 0.0f);
@@ -152,7 +160,7 @@ public:
         (*vertices)[4].set(0.0f, 0.0f, -length / 2.0f);
         (*vertices)[5].set(0.0f, 0.0f, length / 2.0f);
 
-        osg::Vec4Array* colors = new osg::Vec4Array(num_vertices);
+        osg::Vec4Array *colors = new osg::Vec4Array(num_vertices);
         (*colors)[0].set(1.0, 0.0, 0.0, 1.0);
         (*colors)[1].set(1.0, 0.0, 0.0, 1.0);
         (*colors)[2].set(0.0, 0.0, 1.0, 1.0);
@@ -160,26 +168,27 @@ public:
         (*colors)[4].set(0.0, 1.0, 0.0, 1.0);
         (*colors)[5].set(0.0, 1.0, 0.0, 1.0);
 
-        osg::Geometry* geometry = new osg::Geometry;
+        osg::Geometry *geometry = new osg::Geometry;
         geometry->setVertexArray(vertices);
-        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, num_vertices));
-#if OSG_VERSION_GREATER_THAN(3,1,7)
+        geometry->addPrimitiveSet(
+            new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, num_vertices));
+#if OSG_VERSION_GREATER_THAN(3, 1, 7)
         geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
 #else
-		geometry->setColorArray(colors);
-		geometry->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+        geometry->setColorArray(colors);
+        geometry->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
 #endif
 
-        osg::Geode* geode = new osg::Geode;
+        osg::Geode *geode = new osg::Geode;
         geode->addDrawable(geometry);
         geode->getOrCreateStateSet()->setMode(GL_LIGHTING, 0);
 
-        osg::MatrixTransform* grid_transform = new osg::MatrixTransform;
+        osg::MatrixTransform *grid_transform = new osg::MatrixTransform;
         grid_transform->setMatrix(osg::Matrix::rotate(osg::PI_2, 1, 0, 0));
         grid_transform->addChild(geode);
 
-        osg::StateSet* stateset = new osg::StateSet();
-        osg::LineWidth* linewidth = new osg::LineWidth();
+        osg::StateSet *stateset = new osg::StateSet();
+        osg::LineWidth *linewidth = new osg::LineWidth();
         linewidth->setWidth(4.0f);
         stateset->setAttributeAndModes(linewidth, osg::StateAttribute::ON);
         stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -187,7 +196,6 @@ public:
 
         return grid_transform;
     }
-
 };
 
 static const char MODEL_FN[] = "RPAxes.osg";
@@ -204,8 +212,7 @@ class TrackerViewApp {
                                        /// the context.
           ,
           m_scene(new osg::PositionAttitudeTransform),
-          m_smallAxes(new osg::MatrixTransform),
-          m_numTrackers(0) {
+          m_smallAxes(new osg::MatrixTransform), m_numTrackers(0) {
 
         /// Transform into default OSVR coordinate system: z near.
         m_scene->setAttitude(osg::Quat(90, osg::Vec3(1, 0, 0)));
@@ -263,9 +270,7 @@ class TrackerViewApp {
         m_numTrackers++;
     }
 
-    int getNumTrackers() const {
-        return m_numTrackers;
-    }
+    int getNumTrackers() const { return m_numTrackers; }
 
   private:
     template <typename CallbackType>
@@ -302,8 +307,10 @@ int main(int argc, char **argv) {
         " is a tool for visualizing tracking data from the OSVR system.");
     args.getApplicationUsage()->setCommandLineUsage(args.getApplicationName() +
                                                     " [options] osvrpath ...");
-    args.getApplicationUsage()->addCommandLineOption("--orientation <path>", "add an orientation tracker");
-    args.getApplicationUsage()->addCommandLineOption("--pose <path>", "add a pose tracker");
+    args.getApplicationUsage()->addCommandLineOption(
+        "--orientation <path>", "add an orientation tracker");
+    args.getApplicationUsage()->addCommandLineOption("--pose <path>",
+                                                     "add a pose tracker");
 
     /// Init the OSG viewer
     osgViewer::Viewer viewer(args);
