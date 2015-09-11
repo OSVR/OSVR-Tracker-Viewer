@@ -190,6 +190,7 @@ public:
 
 };
 
+static const char MODEL_FN[] = "RPAxes.osg";
 
 class TrackerViewApp {
   public:
@@ -215,7 +216,12 @@ class TrackerViewApp {
         m_scene->setUserData(m_ctx.get());
 
         /// Load the basic model for axes
-        osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile("RPAxes.osg");
+        osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(MODEL_FN);
+        if (!axes) {
+            std::cerr << "Error: Could not read model " << MODEL_FN
+                      << std::endl;
+            throw std::runtime_error("Could not load model");
+        }
 
         //{
         //    /// World axes
@@ -313,44 +319,49 @@ int main(int argc, char **argv) {
         args.writeErrorMessages(std::cerr);
         return 1;
     }
+    try {
+        TrackerViewApp app;
 
-    TrackerViewApp app;
+        std::string path;
 
-    std::string path;
+        // Get pose paths
+        while (args.read("--pose", path)) {
+            app.addPoseTracker(path);
+        }
 
-    // Get pose paths
-    while (args.read("--pose", path)) {
-        app.addPoseTracker(path);
+        // Get orientation paths
+        while (args.read("--orientation", path)) {
+            app.addOrientationTracker(path);
+        }
+
+        // Assume free strings are pose paths
+        for (int pos = 1; pos < args.argc(); ++pos) {
+            if (args.isOption(pos))
+                continue;
+
+            app.addPoseTracker(args[pos]);
+        }
+        // If no trackers were specified, fall back on these defaults
+        if (0 == app.getNumTrackers()) {
+            app.addPoseTracker("/me/hands/left");
+            app.addPoseTracker("/me/hands/right");
+            app.addOrientationTracker("/me/head");
+        }
+        args.reportRemainingOptionsAsUnrecognized();
+
+        if (args.errors()) {
+            args.writeErrorMessages(std::cerr);
+            return 1;
+        }
+
+        viewer.setSceneData(app.getScene());
+    } catch (std::exception const &e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        std::cerr << "Press enter to exit!" << std::endl;
+        std::cin.ignore();
+        return -1;
     }
 
-    // Get orientation paths
-    while (args.read("--orientation", path)) {
-        app.addOrientationTracker(path);
-    }
-
-    // Assume free strings are pose paths
-    for (int pos = 1; pos < args.argc(); ++pos) {
-        if (args.isOption(pos))
-            continue;
-
-        app.addPoseTracker(args[pos]);
-    }
-
-    // If no trackers were specified, fall back on these defaults
-    if (0 == app.getNumTrackers()) {
-        app.addPoseTracker("/me/hands/left");
-        app.addPoseTracker("/me/hands/right");
-        app.addOrientationTracker("/me/head");
-    }
-
-    args.reportRemainingOptionsAsUnrecognized();
-
-    if (args.errors()) {
-        args.writeErrorMessages(std::cerr);
-        return 1;
-    }
-
-    viewer.setSceneData(app.getScene());
     viewer.setCameraManipulator(new osgGA::TrackballManipulator());
 
     viewer.addEventHandler(new osgViewer::WindowSizeHandler);
