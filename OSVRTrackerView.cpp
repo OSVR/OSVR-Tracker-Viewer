@@ -49,6 +49,20 @@
 #include <iostream>
 #include <cmath> // for floor
 
+
+static const char MODEL_FN[] = "RPAxes.osg";
+static const char MESSAGE_PREFIX[] = "\n[TrackerViewer] ";
+
+osg::ref_ptr<osg::Node> loadAxesModel() {
+    osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(MODEL_FN);
+    if (!axes) {
+        std::cerr << MESSAGE_PREFIX << "Error: Could not read model "
+            << MODEL_FN << std::endl;
+        throw std::runtime_error("Could not load model");
+    }
+    return axes;
+}
+
 /// A little utility class to draw a simple grid.
 class Grid : public osg::Group {
   public:
@@ -174,9 +188,7 @@ class Grid : public osg::Group {
     }
 };
 
-static const char MODEL_FN[] = "RPAxes.osg";
 
-static const char MESSAGE_PREFIX[] = "\n[TrackerViewer] ";
 
 class TrackedSensor : public OSVRInterfaceData {
   public:
@@ -275,12 +287,7 @@ class TrackerViewApp {
         m_scene->setUserData(m_ctx.get());
 
         /// Load the basic model for axes
-        osg::ref_ptr<osg::Node> axes = osgDB::readNodeFile(MODEL_FN);
-        if (!axes) {
-            std::cerr << MESSAGE_PREFIX << "Error: Could not read model "
-                      << MODEL_FN << std::endl;
-            throw std::runtime_error("Could not load model");
-        }
+        osg::ref_ptr<osg::Node> axes = loadAxesModel();
 
         /// Small axes for trackers
         m_smallAxes->setMatrix(osg::Matrixd::scale(
