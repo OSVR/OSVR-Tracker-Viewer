@@ -350,6 +350,12 @@ int main(int argc, char **argv) {
         }
         // If no trackers were specified, fall back on these defaults
         if (0 == app.getNumTrackers()) {
+            std::cout << "\n\nTracker Viewer: No valid arguments passed: using "
+                         "a default of --pose "
+                         "/me/hands/left --pose /me/hands/right --orientation "
+                         "/me/head\nRun with the command line argument --help "
+                         "for info.\n"
+                      << std::endl;
             app.addPoseTracker("/me/hands/left");
             app.addPoseTracker("/me/hands/right");
             app.addOrientationTracker("/me/head");
