@@ -28,6 +28,7 @@
 
 // Library/third-party includes
 #include <osg/Node>
+#include <osg/NodeVisitor>
 #include <boost/assert.hpp>
 
 // Standard includes
